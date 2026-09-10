@@ -13,7 +13,7 @@ function App() {
 
   return (
     <div className="flex h-dvh flex-col bg-slate-50">
-      <main className="flex-1 overflow-y-auto">
+      <main className="min-h-0 flex-1">
         {activeTab === 'operations' && <OperationsScreen />}
         {activeTab === 'statistics' && <StatisticsScreen />}
         {activeTab === 'plan' && <PlanScreen />}
