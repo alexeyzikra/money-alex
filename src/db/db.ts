@@ -2,6 +2,17 @@ import Dexie, { type EntityTable } from 'dexie'
 
 export type OperationType = 'expense' | 'income'
 
+// Счёт — наличные, карта, банковский счёт и т.п. Каждая операция
+// (доход/расход) и перевод привязаны к конкретному счёту.
+export interface Account {
+  id?: number
+  name: string
+  icon: string
+  color: string
+  startingBalance: number // сколько было на счету на момент его создания в приложении;
+  // текущий остаток = startingBalance + сумма доходов − сумма расходов − переводы с этого счёта + переводы на этот счёт
+}
+
 // Категория — одновременно и статья расхода, и источник дохода
 // (для дохода "категория" и есть "источник": Зарплата, Инвестиции, Подарки...).
 export interface Category {
@@ -18,6 +29,19 @@ export interface Operation {
   amount: number // в целых Br с копейками как обычное число, без разделения на минимальные единицы —
   // для личного трекера с не миллионами операций погрешность плавающей точки не накопится заметно
   categoryId: number
+  accountId: number
+  date: Date
+  note?: string
+}
+
+// Перевод между своими счетами (например, снял наличку с карты) — не доход
+// и не расход, поэтому хранится отдельно от Operation и не попадает
+// в статистику доходов/расходов, только меняет остатки по счетам.
+export interface Transfer {
+  id?: number
+  amount: number
+  fromAccountId: number
+  toAccountId: number
   date: Date
   note?: string
 }
@@ -31,8 +55,10 @@ export interface CategoryLimit {
 }
 
 class MoneyDatabase extends Dexie {
+  accounts!: EntityTable<Account, 'id'>
   categories!: EntityTable<Category, 'id'>
   operations!: EntityTable<Operation, 'id'>
+  transfers!: EntityTable<Transfer, 'id'>
   limits!: EntityTable<CategoryLimit, 'id'>
 
   constructor() {
@@ -43,17 +69,31 @@ class MoneyDatabase extends Dexie {
     // перебирать все записи). '++id' — автоинкрементный первичный ключ.
     // '&categoryId' в limits — уникальный индекс: не даст создать два
     // лимита для одной категории.
+    //
+    // Реальных пользовательских данных ещё ни у кого нет (проект в самом
+    // начале разработки), поэтому просто меняем version(1) напрямую.
+    // Когда приложением кто-то уже пользуется, для изменений схемы нужно
+    // добавлять version(2), version(3)... — иначе Dexie не поймёт, как
+    // переложить уже сохранённые на устройстве данные в новую структуру.
     this.version(1).stores({
+      accounts: '++id',
       categories: '++id, type',
-      operations: '++id, categoryId, date, type',
+      operations: '++id, accountId, categoryId, date, type',
+      transfers: '++id, fromAccountId, toAccountId, date',
       limits: '++id, &categoryId',
     })
 
-    this.on('populate', () => this.seedDefaultCategories())
+    this.on('populate', () => this.seedDefaults())
   }
 
   // Срабатывает один раз — только когда база создаётся с нуля на устройстве.
-  private async seedDefaultCategories() {
+  private async seedDefaults() {
+    const defaultAccounts: Account[] = [
+      { name: 'Наличные', icon: '💵', color: '#22c55e', startingBalance: 0 },
+      { name: 'Карта', icon: '💳', color: '#3b82f6', startingBalance: 0 },
+    ]
+    await this.accounts.bulkAdd(defaultAccounts)
+
     const defaultCategories: Category[] = [
       { name: 'Еда', type: 'expense', icon: '🍔', color: '#f97316' },
       { name: 'Кафе и рестораны', type: 'expense', icon: '☕', color: '#d97706' },
