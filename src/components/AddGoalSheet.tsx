@@ -28,7 +28,7 @@ export function AddGoalSheet({ onClose }: AddGoalSheetProps) {
         icon: '🎯',
         color: goalColors[goalCount % goalColors.length],
       })
-      await db.goals.add({ categoryId: categoryId!, targetAmount })
+      await db.goals.add({ categoryId, targetAmount })
     })
     onClose()
   }

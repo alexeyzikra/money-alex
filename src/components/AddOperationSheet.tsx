@@ -45,30 +45,36 @@ export function AddOperationSheet({ onClose }: AddOperationSheetProps) {
   const selectedFromAccount = accounts.find((a) => a.id === selectedFromAccountId)
   const selectedToAccount = accounts.find((a) => a.id === toAccountId)
 
-  const canSave =
+  // Условия вынесены в отдельные переменные не только ради читаемости:
+  // так TypeScript внутри save() сам понимает, что нужные поля заполнены,
+  // и не требует ручных проверок вроде categoryId!.
+  const canSaveTransfer =
     amount > 0 &&
-    (mode === 'transfer'
-      ? selectedFromAccountId !== undefined &&
-        toAccountId !== undefined &&
-        selectedFromAccountId !== toAccountId
-      : categoryId !== undefined && selectedAccountId !== undefined)
+    selectedFromAccountId !== undefined &&
+    toAccountId !== undefined &&
+    selectedFromAccountId !== toAccountId
+
+  const canSaveOperation =
+    amount > 0 && categoryId !== undefined && selectedAccountId !== undefined
+
+  const canSave = mode === 'transfer' ? canSaveTransfer : canSaveOperation
 
   const save = async () => {
-    if (!canSave) return
-
     if (mode === 'transfer') {
+      if (!canSaveTransfer) return
       await db.transfers.add({
         amount,
-        fromAccountId: selectedFromAccountId!,
-        toAccountId: toAccountId!,
+        fromAccountId: selectedFromAccountId,
+        toAccountId,
         date: new Date(),
       })
     } else {
+      if (!canSaveOperation) return
       await db.operations.add({
         type: mode,
         amount,
-        categoryId: categoryId!,
-        accountId: selectedAccountId!,
+        categoryId,
+        accountId: selectedAccountId,
         date: new Date(),
       })
     }
@@ -214,7 +220,7 @@ export function AddOperationSheet({ onClose }: AddOperationSheetProps) {
         <PickerSheet
           title="Категория"
           items={categories.map((c) => ({
-            id: c.id!,
+            id: c.id,
             name: c.name,
             icon: c.icon,
             color: c.color,
@@ -234,7 +240,7 @@ export function AddOperationSheet({ onClose }: AddOperationSheetProps) {
         <PickerSheet
           title="Счёт"
           items={accounts.map((a) => ({
-            id: a.id!,
+            id: a.id,
             name: `${a.name} · ${formatMoney(a.startingBalance)}`,
             icon: a.icon,
             color: a.color,

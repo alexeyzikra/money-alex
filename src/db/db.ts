@@ -1,11 +1,11 @@
-import Dexie, { type EntityTable } from 'dexie'
+import Dexie, { type EntityTable, type InsertType } from 'dexie'
 
 export type OperationType = 'expense' | 'income'
 
 // Счёт — наличные, карта, банковский счёт и т.п. Каждая операция
 // (доход/расход) и перевод привязаны к конкретному счёту.
 export interface Account {
-  id?: number
+  id: number
   name: string
   icon: string
   color: string
@@ -16,7 +16,7 @@ export interface Account {
 // Категория — одновременно и статья расхода, и источник дохода
 // (для дохода "категория" и есть "источник": Зарплата, Инвестиции, Подарки...).
 export interface Category {
-  id?: number
+  id: number
   name: string
   type: OperationType
   icon: string // эмодзи-заглушка, потом можно заменить на нормальные иконки
@@ -24,7 +24,7 @@ export interface Category {
 }
 
 export interface Operation {
-  id?: number
+  id: number
   type: OperationType
   amount: number // в целых Br с копейками как обычное число, без разделения на минимальные единицы —
   // для личного трекера с не миллионами операций погрешность плавающей точки не накопится заметно
@@ -38,7 +38,7 @@ export interface Operation {
 // и не расход, поэтому хранится отдельно от Operation и не попадает
 // в статистику доходов/расходов, только меняет остатки по счетам.
 export interface Transfer {
-  id?: number
+  id: number
   amount: number
   fromAccountId: number
   toAccountId: number
@@ -50,7 +50,7 @@ export interface Transfer {
 // значит "лимит на еду" всегда одно и то же число, пока ты сам его не поменяешь.
 // Названия у лимита нет: его роль играет название категории.
 export interface CategoryLimit {
-  id?: number
+  id: number
   categoryId: number
   amount: number
 }
@@ -59,7 +59,7 @@ export interface CategoryLimit {
 // откладывая деньги, ты записываешь расход в неё, и цель заполняется.
 // Название, иконка и цвет живут на этой категории, здесь их дублировать не нужно.
 export interface Goal {
-  id?: number
+  id: number
   categoryId: number
   targetAmount: number
 }
@@ -99,14 +99,15 @@ class MoneyDatabase extends Dexie {
   }
 
   // Срабатывает один раз — только когда база создаётся с нуля на устройстве.
+  // InsertType — это запись без id: его проставит сама база при вставке.
   private async seedDefaults() {
-    const defaultAccounts: Account[] = [
+    const defaultAccounts: InsertType<Account, 'id'>[] = [
       { name: 'Наличные', icon: '💵', color: '#22c55e', startingBalance: 0 },
       { name: 'Карта', icon: '💳', color: '#3b82f6', startingBalance: 0 },
     ]
     await this.accounts.bulkAdd(defaultAccounts)
 
-    const defaultCategories: Category[] = [
+    const defaultCategories: InsertType<Category, 'id'>[] = [
       { name: 'Еда', type: 'expense', icon: '🍔', color: '#f97316' },
       { name: 'Кафе и рестораны', type: 'expense', icon: '☕', color: '#d97706' },
       { name: 'Транспорт', type: 'expense', icon: '🚌', color: '#0ea5e9' },

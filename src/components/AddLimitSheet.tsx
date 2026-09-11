@@ -25,7 +25,7 @@ export function AddLimitSheet({ onClose }: AddLimitSheetProps) {
       ...limits.map((l) => l.categoryId),
       ...goals.map((g) => g.categoryId),
     ])
-    return categories.filter((c) => !taken.has(c.id!))
+    return categories.filter((c) => !taken.has(c.id))
   }, [], [])
 
   const amount = Number(amountText.replace(',', '.'))
@@ -34,7 +34,7 @@ export function AddLimitSheet({ onClose }: AddLimitSheetProps) {
 
   const save = async () => {
     if (!canSave) return
-    await db.limits.add({ categoryId: categoryId!, amount })
+    await db.limits.add({ categoryId, amount })
     onClose()
   }
 
@@ -81,7 +81,7 @@ export function AddLimitSheet({ onClose }: AddLimitSheetProps) {
         <PickerSheet
           title="Категория"
           items={availableCategories.map((c) => ({
-            id: c.id!,
+            id: c.id,
             name: c.name,
             icon: c.icon,
             color: c.color,

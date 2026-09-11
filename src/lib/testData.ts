@@ -71,8 +71,8 @@ export async function seedTestData() {
           operations.push({
             type,
             amount: randomBetween(plan.minAmount, plan.maxAmount),
-            categoryId: category.id!,
-            accountId: accounts[i % accounts.length].id!,
+            categoryId: category.id,
+            accountId: accounts[i % accounts.length].id,
             date: randomDateInMonth(monthsAgo),
           })
         }

@@ -113,16 +113,19 @@ function sumByCategory(
     amountByCategory.set(operation.categoryId, current + operation.amount)
   }
 
-  return categories
-    .filter((category) => amountByCategory.has(category.id!))
-    .map((category) => ({
-      categoryId: category.id!,
+  const totals: CategoryTotal[] = []
+  for (const category of categories) {
+    const amount = amountByCategory.get(category.id)
+    if (amount === undefined) continue
+    totals.push({
+      categoryId: category.id,
       name: category.name,
       icon: category.icon,
       color: category.color,
-      amount: amountByCategory.get(category.id!)!,
-    }))
-    .sort((a, b) => b.amount - a.amount)
+      amount,
+    })
+  }
+  return totals.sort((a, b) => b.amount - a.amount)
 }
 
 interface PercentLabelProps {
