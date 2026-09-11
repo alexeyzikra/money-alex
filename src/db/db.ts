@@ -48,10 +48,20 @@ export interface Transfer {
 
 // Лимит хранится по одной строке на категорию (без месяца в ключе) —
 // значит "лимит на еду" всегда одно и то же число, пока ты сам его не поменяешь.
+// Названия у лимита нет: его роль играет название категории.
 export interface CategoryLimit {
   id?: number
   categoryId: number
   amount: number
+}
+
+// Цель накопления. Под каждую цель создаётся своя категория расхода —
+// откладывая деньги, ты записываешь расход в неё, и цель заполняется.
+// Название, иконка и цвет живут на этой категории, здесь их дублировать не нужно.
+export interface Goal {
+  id?: number
+  categoryId: number
+  targetAmount: number
 }
 
 class MoneyDatabase extends Dexie {
@@ -60,6 +70,7 @@ class MoneyDatabase extends Dexie {
   operations!: EntityTable<Operation, 'id'>
   transfers!: EntityTable<Transfer, 'id'>
   limits!: EntityTable<CategoryLimit, 'id'>
+  goals!: EntityTable<Goal, 'id'>
 
   constructor() {
     super('money-alex')
@@ -81,6 +92,7 @@ class MoneyDatabase extends Dexie {
       operations: '++id, accountId, categoryId, date, type',
       transfers: '++id, fromAccountId, toAccountId, date',
       limits: '++id, &categoryId',
+      goals: '++id, &categoryId',
     })
 
     this.on('populate', () => this.seedDefaults())
