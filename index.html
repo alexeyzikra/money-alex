@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -7,6 +7,17 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
+
+    <!-- Цвет строки состояния в установленном приложении -->
+    <meta name="theme-color" content="#7c3aed" />
+
+    <!-- iOS не читает manifest.json целиком, ему нужны свои теги:
+         иконка на экране "Домой", имя под ней и режим без адресной строки. -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Финансы" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
     <title>Учёт финансов</title>
   </head>
   <body>
