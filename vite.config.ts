@@ -3,8 +3,15 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// На GitHub Pages сайт лежит не в корне домена, а в подпапке с именем
+// репозитория: username.github.io/money-alex/. Поэтому все ссылки на файлы
+// должны начинаться с этого пути. Если переименуешь репозиторий — поменяй
+// здесь, и всё остальное подхватится само.
+const base = '/money-alex/'
+
 // https://vite.dev/config/
 export default defineConfig({
+  base,
   plugins: [
     react(),
     tailwindcss(),
@@ -22,8 +29,10 @@ export default defineConfig({
         // standalone — открывается без адресной строки браузера, как обычное приложение.
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/',
-        scope: '/',
+        // Адрес, который откроется при запуске с домашнего экрана,
+        // и граница, внутри которой приложение считает страницы "своими".
+        start_url: base,
+        scope: base,
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
