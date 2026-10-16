@@ -1,32 +1,92 @@
-# React + TypeScript + Vite
+# 💸 Money Alex — личный учёт финансов
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Мобильное веб-приложение для учёта доходов и расходов. Ставится на домашний
+экран телефона как обычное приложение, работает без интернета, а все записи
+остаются на устройстве — никакого сервера, аккаунтов и синхронизации с чужими
+облаками.
 
-Currently, two official plugins are available:
+**Открыть:** https://alexeyzikra.github.io/money-alex/
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+> На iPhone: Safari → «Поделиться» → «На экран «Домой»».
+> На Android: Chrome → меню → «Установить приложение».
 
-## React Compiler
+## Что умеет
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+**Операции**
+- Доходы и расходы по категориям и счетам, с заметкой и датой
+- Переводы между своими счетами (снял наличку с карты) — не считаются ни доходом, ни расходом, только меняют остатки
+- Ввод суммы отдельной цифровой клавиатурой, без возни с системной
+- Лента операций, сгруппированная по дням, и сводка за текущий месяц: доходы, расходы, баланс за период и общий остаток
 
-## Expanding the Oxlint configuration
+**Статистика**
+- Круговая диаграмма расходов и доходов по категориям с процентами
+- Список категорий с точными суммами, от большей к меньшей
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+**План**
+- Цели накопления: под каждую создаётся своя категория, и прогресс заполняется по мере того, как ты откладываешь
+- Лимиты по категориям расходов, чтобы видеть, сколько ещё можно потратить
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+**Данные**
+- Всё лежит в IndexedDB прямо в браузере, офлайн и приватно
+- Выгрузка и загрузка одним JSON-файлом — перенос на другое устройство и единственная настоящая страховка от потери данных
+- На iPhone файл уходит через системное «Поделиться», потому что обычное скачивание из установленного приложения там часто не работает
+- Запрос постоянного хранилища, чтобы браузер не стёр данные при нехватке места
+
+Суммы — в белорусских рублях (`1 234,56 Br`), интерфейс на русском.
+
+## Стек
+
+| Зачем | Чем |
+| --- | --- |
+| Интерфейс | React 19 + TypeScript |
+| Сборка | Vite 8 |
+| Стили | Tailwind CSS 4 |
+| База на устройстве | IndexedDB через Dexie (+ `dexie-react-hooks` для живых запросов) |
+| Графики | Recharts |
+| Офлайн и установка | `vite-plugin-pwa` (service worker + манифест) |
+| Линтер | Oxlint |
+
+## Запуск у себя
+
+Нужен Node.js 22 или новее.
+
+```bash
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Дальше открыть адрес, который напечатает Vite (обычно http://localhost:5173).
+
+Остальные команды:
+
+```bash
+npm run build    # сборка в dist/ с проверкой типов
+npm run preview  # посмотреть собранную версию локально
+npm run lint     # Oxlint
+```
+
+## Структура
+
+```
+src/
+├── App.tsx              # переключение вкладок
+├── db/db.ts             # схема базы: счета, категории, операции, переводы, лимиты, цели
+├── screens/             # четыре экрана: Операции, Статистика, План, Настройки
+├── components/          # нижняя навигация, шторки добавления, цифровая клавиатура
+└── lib/                 # выгрузка/загрузка файла, форматирование денег и дат, постоянное хранилище
+```
+
+## Публикация
+
+Сайт собирается и выкладывается на GitHub Pages автоматически при каждом пуше
+в `main` — воркфлоу [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
+Приложение живёт в подпапке `/money-alex/`, этот путь задан в
+[`vite.config.ts`](vite.config.ts): при переименовании репозитория его нужно
+поменять там.
+
+## Что дальше
+
+- Управление категориями и счетами из настроек: добавление, переименование, иконка и цвет
+- Выбор периода в статистике (сейчас считается за всё время) и фильтр по счёту
+- Редактирование и удаление уже записанных операций
+- Нормальные иконки вместо эмодзи-заглушек и тёмная тема
