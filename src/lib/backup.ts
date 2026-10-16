@@ -23,7 +23,12 @@ interface BackupFile {
   goals: Goal[]
 }
 
-export async function exportToFile() {
+export type ExportResult =
+  | { status: 'shared'; operations: number }
+  | { status: 'downloaded'; operations: number }
+  | { status: 'cancelled' }
+
+export async function exportToFile(): Promise<ExportResult> {
   const [accounts, categories, operations, transfers, limits, goals] =
     await Promise.all([
       db.accounts.toArray(),
@@ -45,17 +50,35 @@ export async function exportToFile() {
     goals,
   }
 
-  const blob = new Blob([JSON.stringify(backup, null, 2)], {
+  const fileName = `money-alex-${new Date().toISOString().slice(0, 10)}.json`
+  const file = new File([JSON.stringify(backup, null, 2)], fileName, {
     type: 'application/json',
   })
-  const url = URL.createObjectURL(blob)
+
+  // На iPhone скачивание файла из приложения, установленного на домашний экран,
+  // часто не срабатывает вовсе. Системное "Поделиться" работает там надёжно
+  // и сразу даёт отправить файл в Telegram или сохранить в Файлы.
+  if (navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file] })
+      return { status: 'shared', operations: operations.length }
+    } catch (error) {
+      // Закрытое пользователем окно "Поделиться" — не ошибка, молча выходим.
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return { status: 'cancelled' }
+      }
+      // Любой другой сбой — пробуем обычное скачивание ниже.
+    }
+  }
+
+  const url = URL.createObjectURL(file)
   const link = document.createElement('a')
   link.href = url
-  link.download = `money-alex-${new Date().toISOString().slice(0, 10)}.json`
+  link.download = fileName
   link.click()
   URL.revokeObjectURL(url)
 
-  return operations.length
+  return { status: 'downloaded', operations: operations.length }
 }
 
 export interface ImportResult {

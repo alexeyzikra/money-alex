@@ -1,20 +1,31 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { db } from '../db/db'
 import { exportToFile, importFromFile } from '../lib/backup'
+import { isStoragePersistent } from '../lib/storage'
 import { clearAllOperations, seedTestData } from '../lib/testData'
 
 export function SettingsScreen() {
   const [status, setStatus] = useState<string>()
   const [error, setError] = useState<string>()
+  const [isPersistent, setIsPersistent] = useState<boolean>()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const operationsCount = useLiveQuery(() => db.operations.count(), [], 0)
 
+  useEffect(() => {
+    isStoragePersistent().then(setIsPersistent)
+  }, [])
+
   const handleExport = async () => {
     setError(undefined)
-    const count = await exportToFile()
-    setStatus(`Файл сохранён, операций внутри: ${count}.`)
+    const result = await exportToFile()
+    if (result.status === 'cancelled') return
+    setStatus(
+      result.status === 'shared'
+        ? `Файл отправлен, операций внутри: ${result.operations}.`
+        : `Файл сохранён, операций внутри: ${result.operations}.`,
+    )
   }
 
   const handleImport = async (file: File) => {
@@ -51,10 +62,18 @@ export function SettingsScreen() {
       <section className="mt-8">
         <h2 className="font-medium text-slate-900">Данные</h2>
         <p className="mt-1 text-sm text-slate-500">
-          Записи хранятся только в этом браузере и никуда не отправляются.
+          Записи хранятся только на этом устройстве и никуда не отправляются.
           Сохраняй файл время от времени — это единственный способ не потерять их
-          при смене телефона или очистке браузера.
+          при смене телефона или очистке браузера. Этим же файлом данные
+          переносятся на другое устройство.
         </p>
+        {isPersistent !== undefined && (
+          <p className="mt-2 text-sm text-slate-500">
+            {isPersistent
+              ? 'Хранилище помечено как постоянное: браузер не удалит данные при нехватке места.'
+              : 'Браузер не пометил хранилище как постоянное — при нехватке места данные могут быть удалены. Делай выгрузки почаще.'}
+          </p>
+        )}
         <div className="mt-4 flex flex-col gap-2">
           <button
             type="button"
